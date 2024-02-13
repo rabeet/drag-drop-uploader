@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Uppy Example</title>
+    <link href="https://releases.transloadit.com/uppy/v3.21.0/uppy.min.css" rel="stylesheet">
+</head>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { Uppy, AwsS3, Dashboard } from "https://releases.transloadit.com/uppy/v3.21.0/uppy.min.mjs"
+
+        const uppy = new Uppy({ autoProceed: true })
+        uppy.use(Dashboard, {
+            inline: true,
+            target: "#app",
+            showProgressDetails: true,
+            proudlyDisplayPoweredByUppy: true
+        })
+
+        uppy.use(AwsS3, {
+            shouldUseMultipart: false,
+            getUploadParameters(file) {
+                console.log("Sending POST");
+                // Send a request to our PHP signing endpoint.
+                return fetch('http://localhost:8080/s3-sign.php', {
+                    method: 'post',
+                    // Send and receive JSON.
+                    headers: {
+                        accept: 'application/json',
+                        'content-type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: file.name,
+                        contentType: file.type,
+                    }),
+                }).then((response) => {
+                    // Parse the JSON response.
+                    return response.json()
+                }).then((data) => {
+                    // Return an object in the correct shape.
+                    // Perform your POST logic here making use of relevant file info
+                    console.log("Perform your POST logic here making use of relevant file info")
+                    return {
+                        method: data.method,
+                        url: data.url,
+                        fields: data.fields,
+                        headers: data.headers,
+                    }
+                })
+            },
+        });
+    </script>
+</body>
+
+</html>
